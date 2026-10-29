@@ -1,0 +1,21 @@
+# docker/docker-compose.yaml
+version: '3.8'
+
+services:
+  lean4-verifier-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.lean4
+    container_name: lean4_cpu_sandbox
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '32.0'       # Dedicate 16-32 vCPU cores to Lean 4 sandbox
+          memory: 32G        # 32GB host RAM limit to prevent OOM on host
+        reservations:
+          cpus: '16.0'
+          memory: 16G
+    volumes:
+      - /tmp/lean_eval:/tmp/lean_eval
+    network_mode: none       # Disables network access for hermetic execution

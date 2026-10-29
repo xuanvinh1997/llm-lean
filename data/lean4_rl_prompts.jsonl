@@ -1,0 +1,5 @@
+{"theorem": "theorem sum_identity (n : Nat) : n + 0 = n", "imports": "import Mathlib\n"}
+{"theorem": "theorem mul_one_nat (x : Nat) : x * 1 = x", "imports": "import Mathlib\n"}
+{"theorem": "theorem sub_self_nat (a : Nat) : a - a = 0", "imports": "import Mathlib\n"}
+{"theorem": "theorem double_even (n : Nat) : 2 * n = n + n", "imports": "import Mathlib\n"}
+{"theorem": "theorem square_nonneg_real (x : Real) : 0 ≤ x^2", "imports": "import Mathlib\n"}

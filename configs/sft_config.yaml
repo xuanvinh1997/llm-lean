@@ -1,0 +1,53 @@
+# configs/sft_config.yaml
+# Cold-Start SFT Configuration for 1x RTX 6000 Pro 96GB
+# Pure BF16 Base Model + RSLoRA (High-Rank r=128)
+
+model:
+  model_id: "Qwen/Qwen3.8-27B"
+  torch_dtype: "bfloat16"
+  attn_implementation: "flash_attention_2"
+  trust_remote_code: true
+
+lora:
+  r: 128
+  lora_alpha: 256
+  lora_dropout: 0.05
+  use_rslora: true
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+data:
+  dataset_name_or_path: "data/lean4_sft_sample.jsonl"
+  max_seq_length: 8192
+  packing: false
+  dataset_num_proc: 4
+
+training_arguments:
+  output_dir: "./outputs/qwen3.8-27b-lean4-sft"
+  optim: "paged_adamw_8bit"
+  learning_rate: 1.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16       # Effective batch size = 16
+  gradient_checkpointing: true          # Vital to cap activation VRAM < 16GB at 8k seq_len
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  max_grad_norm: 1.0
+  bf16: true
+  fp16: false
+  logging_steps: 5
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 3
+  dataloader_num_workers: 4
+  report_to: "tensorboard"
+  seed: 42

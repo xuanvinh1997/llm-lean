@@ -1,0 +1,64 @@
+# configs/grpo_config.yaml
+# Stage 2: RLVR with GRPO for 1x RTX 6000 Pro 96GB
+# Verifier: Lean 4 CPU REPL Sandbox
+
+model:
+  model_id: "Qwen/Qwen3.8-27B"
+  sft_adapter_path: "./outputs/qwen3.8-27b-lean4-sft/final"
+  torch_dtype: "bfloat16"
+  attn_implementation: "flash_attention_2"
+  trust_remote_code: true
+
+lora:
+  r: 128
+  lora_alpha: 256
+  lora_dropout: 0.05
+  use_rslora: true
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+data:
+  dataset_name_or_path: "data/lean4_rl_prompts.jsonl"
+
+grpo:
+  output_dir: "./outputs/qwen3.8-27b-lean4-grpo"
+  learning_rate: 3.0e-6
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_generations: 4                   # K = 4 parallel proof trajectories
+  temperature: 0.7
+  top_p: 0.95
+  max_prompt_length: 2048
+  max_completion_length: 6144
+  beta: 0.02                          # KL penalty against reference policy
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  bf16: true
+  fp16: false
+  optim: "paged_adamw_8bit"
+  logging_steps: 2
+  save_steps: 50
+  save_total_limit: 3
+  report_to: "tensorboard"
+  seed: 42
+
+  # Single-GPU Colocate Time-Sharing with vLLM
+  use_vllm: true
+  vllm_gpu_memory_utilization: 0.45   # Co-locate vLLM rollout & backward on 1x 96GB card
+  vllm_max_model_len: 8192
+
+verifier:
+  repl_path: "/opt/lean/repl/.lake/build/bin/repl"
+  lake_dir: "/opt/lean/mathlib_project"
+  timeout_seconds: 15.0               # Strict timeout to abort infinite loops like 'simp'
+  max_workers: 16                     # CPU threads allocated to Lean 4 sandbox
+  memory_limit_mb: 2048               # 2GB max per Lean process

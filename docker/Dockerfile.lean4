@@ -1,0 +1,41 @@
+# docker/Dockerfile.lean4
+# Isolated CPU-only Sandbox Container for Lean 4 & Mathlib verification
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ELAN_HOME="/root/.elan"
+ENV PATH="${ELAN_HOME}/bin:${PATH}"
+
+# Install core build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    build-essential \
+    python3 \
+    python3-pip \
+    ca-certificates \
+    libgmp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Elan (Lean version manager)
+RUN curl -sSf 'https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh' | sh -s -- -y --default-toolchain none
+
+# Set up Lean sandbox workspace with Mathlib
+WORKDIR /opt/lean/mathlib_project
+COPY docker/lean-toolchain ./lean-toolchain
+COPY docker/lakefile.lean ./lakefile.lean
+
+# Install toolchain and fetch prebuilt mathlib cache
+RUN elan toolchain install $(cat lean-toolchain) && \
+    elan default $(cat lean-toolchain) && \
+    lake update && \
+    lake exe cache get || true
+
+# Pre-compile imports
+RUN lake build || true
+
+# Test lean installation
+RUN lean --version
+
+CMD ["tail", "-f", "/dev/null"]

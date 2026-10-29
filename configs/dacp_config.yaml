@@ -1,0 +1,41 @@
+# configs/dacp_config.yaml
+# Stage 1: Domain-Adaptive Continued Pre-training (DACP / SFT Prep)
+# Target: Mathlib4, Theoretical Physics & Math Textbooks
+
+model_id: "Qwen/Qwen3.8-27B"
+torch_dtype: "bfloat16"
+output_dir: "./outputs/qwen3.8-27b-dacp"
+dataset_name: "data/dacp_math_physics_sample.jsonl"
+
+lora:
+  r: 128
+  lora_alpha: 256
+  lora_dropout: 0.05
+  use_rslora: true
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+training_arguments:
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  max_seq_length: 8192
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  max_grad_norm: 1.0
+  bf16: true
+  optim: "paged_adamw_8bit"
+  logging_steps: 5
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 3
+  dataloader_num_workers: 4
